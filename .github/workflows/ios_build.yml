@@ -1,47 +1,33 @@
-name: Build iOS IPA
+name: iOS IPA Build
 
 on:
-  workflow_dispatch:   # Manual trigger
-  push:
-    branches:
-      - main           # Also auto-build on push
+  workflow_dispatch:
 
 jobs:
-  build-ios:
+  build:
     runs-on: macos-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout Repo
+        uses: actions/checkout@v4
 
-      - name: Set up Flutter
+      - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.0"  # set your version
+          flutter-version: "3.16.0"
 
-      - name: Flutter pub get
+      - name: Install Dependencies
         run: flutter pub get
 
-      - name: Build iOS Release
+      - name: Enable iOS
+        run: flutter config --enable-ios
+
+      - name: Build iOS (IPA)
         run: flutter build ios --release --no-codesign
 
-      - name: Generate IPA from Xcode
-        run: |
-          cd ios
-          xcodebuild -workspace Runner.xcworkspace \
-            -scheme Runner \
-            -sdk iphoneos \
-            -configuration Release \
-            archive -archivePath build/Runner.xcarchive
-
-          xcodebuild \
-            -exportArchive \
-            -archivePath build/Runner.xcarchive \
-            -exportOptionsPlist exportOptions.plist \
-            -exportPath build/ipa
-
-      - name: Upload IPA
-        uses: actions/upload-artifact@v3
+      # NEW artifact action (v4)
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: ios-ipa
-          path: ios/build/ipa/*.ipa
+          path: build/ios/iphoneos/Runner.app
